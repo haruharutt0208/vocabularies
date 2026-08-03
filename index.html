@@ -7,24 +7,35 @@
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku Gothic+New:wght@400&display=swap" rel="stylesheet">
 
   <style>
-    /* --- 基本変数定義（デフォルト：ライトモード） --- */
     :root {
-      --bg-color: #ffffff;             /* 全体背景 */
-      --text-color: #000000;           /* 英単語・メニュー文字色 */
-      --meaning-color: #ff6b00;        /* 意味の文字色（オレンジ） */
-      --border-color: #000000;         /* 分割線・枠線の色 */
+      --bg-color: #f5f5f7;
+      --color-gray: #e4e4e8;
+      --color-light-gray: #f0f0f2;
+      --text-color: #000000;
+      --meaning-color: #ff6b00;
+      --badge-bg: rgba(0, 0, 0, 0.05);
     }
 
-    /* --- ダークモード --- */
+    body.dark-mode {
+      --bg-color: #121212;
+      --color-gray: #2a2a2c;
+      --color-light-gray: #1c1c1e;
+      --text-color: #ffffff;
+      --meaning-color: #ff8533;
+      --badge-bg: rgba(255, 255, 255, 0.1);
+    }
+
     @media (prefers-color-scheme: dark) {
-      :root {
-        --bg-color: #121212;           /* 全体背景（黒） */
-        --text-color: #ffffff;         /* 英単語・メニュー文字色 */
-        --meaning-color: #ff8533;        /* 意味の文字色（ダークモード用） */
-        --border-color: #ffffff;       /* 分割線・枠線の色 */
+      body:not(.light-mode) {
+        --bg-color: #121212;
+        --color-gray: #2a2a2c;
+        --color-light-gray: #1c1c1e;
+        --text-color: #ffffff;
+        --meaning-color: #ff8533;
+        --badge-bg: rgba(255, 255, 255, 0.1);
       }
     }
 
@@ -34,144 +45,156 @@
       padding: 0;
     }
 
+    html, body {
+      width: 100%;
+      height: 100%;
+    }
+
     body {
       font-family: "Zen Kaku Gothic New", sans-serif;
+      font-weight: 400;
       background-color: var(--bg-color);
       color: var(--text-color);
-      height: 100vh;
       display: flex;
       flex-direction: column;
       user-select: none;
       -webkit-user-select: none;
-      transition: background-color 0.3s, color 0.3s;
       overflow: hidden;
     }
 
-    /* 上部 1/3 エリア（単語表示部） */
     .header-area {
       flex: 1;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      background-color: var(--bg-color);
-      border-bottom: 2px solid var(--border-color);
-      padding: 10px;
+      padding: 16px;
       position: relative;
     }
 
-    .main-title {
-      font-size: 2.8rem;
-      font-weight: 700;
-      color: var(--text-color);
+    .title-card {
+      width: 100%;
+      height: 100%;
+      background-color: var(--color-gray);
+      border-radius: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
       text-align: center;
+      font-size: 2.2rem;
+      font-weight: 400;
       word-break: break-all;
-      z-index: 1;
     }
 
-    /* 単語部 左半分のタップ・長押し用オーバーレイ */
-    .word-left-tap {
+    .word-left-tap, .word-right-tap {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 50%;
-      height: 100%;
+      top: 16px;
+      bottom: 16px;
+      width: calc(50% - 16px);
       background: transparent;
       cursor: pointer;
       z-index: 5;
       touch-action: manipulation;
     }
 
-    /* 単語部 右半分のタップ・長押し用オーバーレイ */
-    .word-right-tap {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 50%;
-      height: 100%;
-      background: transparent;
-      cursor: pointer;
-      z-index: 5;
-      touch-action: manipulation;
-    }
+    .word-left-tap { left: 16px; }
+    .word-right-tap { right: 16px; }
 
-    /* 下部 2/3 エリア（意味表示部） */
     .content-area {
       flex: 2;
-      padding: 20px;
+      padding: 0 16px 16px 16px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      background-color: var(--bg-color);
+      gap: 12px;
       position: relative;
     }
 
-    /* 行レイアウト */
-    .item-row {
+    .item-card {
       display: flex;
       align-items: center;
-      padding: 8px 0;
+      padding: 10px 16px;
+      border-radius: 12px;
+      background-color: var(--color-light-gray);
+      min-height: 54px;
       position: relative;
       z-index: 1;
+      width: 100%;
     }
 
-    /* 単語学習画面：品詞アイコン枠付きスタイル */
+    .item-card.has-meaning {
+      background-color: var(--color-gray);
+    }
+
+    .item-card.menu-card {
+      background-color: var(--color-light-gray);
+      cursor: pointer;
+    }
+
+    .item-card.menu-card:hover {
+      background-color: var(--color-gray);
+    }
+
     .icon-badge {
-      display: inline-block;
-      width: 38px;
-      height: 38px;
-      line-height: 36px;
-      text-align: center;
-      font-weight: 700;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      width: 36px;
+      height: 36px;
+      font-weight: 400;
       color: var(--text-color);
-      background-color: transparent;
-      border: 1px solid var(--border-color);
+      background-color: var(--color-gray);
       border-radius: 8px;
-      margin-right: 16px;
+      margin-right: 14px;
       flex-shrink: 0;
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
 
-    /* 意味を持たない品詞アイコンの透過 */
     .icon-badge.disabled {
       opacity: 0.25;
     }
 
-    /* メニュー画面：枠なしの箇条書き用『◯』マーク */
-    .menu-bullet {
-      display: inline-block;
-      width: 38px;
-      text-align: center;
-      font-size: 1.2rem;
+    .count-badge {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      min-width: 36px;
+      height: 36px;
+      padding: 0 6px;
+      font-weight: 400;
       color: var(--text-color);
-      margin-right: 16px;
+      background-color: var(--badge-bg);
+      border-radius: 8px;
+      margin-left: 14px;
       flex-shrink: 0;
+      font-size: 1rem;
     }
 
-    /* 意味のテキスト（オレンジ色） */
+    .item-card.menu-card:hover .count-badge {
+      background-color: var(--color-gray);
+    }
+
     .meaning-text {
-      font-size: 1.2rem;
-      line-height: 1.5;
+      font-size: 1.15rem;
+      line-height: 1.4;
       color: var(--meaning-color);
-      font-weight: 700;
+      font-weight: 400;
     }
 
-    /* メニューのセクションテキスト */
     .section-text {
-      font-size: 1.2rem;
-      line-height: 1.5;
+      font-size: 1.15rem;
+      line-height: 1.4;
       color: var(--text-color);
-      font-weight: 700;
+      font-weight: 400;
+      flex: 1;
     }
 
-    /* 意味部全体のタップ用オーバーレイ */
     .meaning-tap-overlay {
       position: absolute;
       top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
       background: transparent;
       cursor: pointer;
       z-index: 5;
@@ -181,235 +204,211 @@
 <body oncontextmenu="return false;">
 
   <div class="header-area">
-    <div id="mainDisplay" class="main-title">読み込み中...</div>
-    
-    <div id="wordLeftTap" class="word-left-tap" style="display: none;"></div>
-    <div id="wordRightTap" class="word-right-tap" style="display: none;"></div>
+    <div id="mainDisplay" class="title-card"></div>
+    <div id="wordLeftTap" class="word-left-tap"></div>
+    <div id="wordRightTap" class="word-right-tap"></div>
   </div>
 
   <div id="contentContainer" class="content-area">
     <div id="meaningTapOverlay" class="meaning-tap-overlay" onclick="handleMeaningClick()" style="display: none;"></div>
-    <div id="listContent"></div>
+    <div id="listContent" style="display: flex; flex-direction: column; gap: 12px; width: 100%;"></div>
   </div>
 
   <script>
-    // ★ここにスプレッドシートのURLを貼ってください
     const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1kI0IS_wa0cWi7ZVBB_6Hf0Afgiy49CoXSQz720zbsyc/edit?gid=0#gid=0';
-
-    // 品詞順序（常にこの7つを表示）
     const ALL_POS = ['自', '他', '名', '形', '副', '前', '接'];
 
-    let notebookTitle = '単語帳'; // A列が0の行から動的にセットされます
-    let sectionsData = [];
+    let notebooks = [];
+    let currentNotebookIndex = 0;
     let currentSectionIndex = 0;
     let currentWordIndex = 0;
-    let visibleMeaningCount = 0;  // 現在表示されている意味の件数
+    let visibleMeaningCount = 0;
     let isStudyMode = false;
-
-    // 長押し判定用変数
     let longPressTimer = null;
     let isLongPressTriggered = false;
 
-    // JSONP通信でデータ読み込み
     function loadDataWithJSONP() {
       try {
         const idMatch = SPREADSHEET_URL.match(/\/d\/([^\/]+)/);
         const gidMatch = SPREADSHEET_URL.match(/gid=([0-9]+)/);
-
-        if (!idMatch) {
-          document.getElementById('mainDisplay').innerText = 'URLが無効です';
-          return;
-        }
-
-        const spreadsheetId = idMatch[1];
-        const gid = gidMatch ? gidMatch[1] : '0';
+        if (!idMatch) return;
 
         const script = document.createElement('script');
-        script.src = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=responseHandler:handleGvizResponse&gid=${gid}`;
-        
-        script.onerror = function() {
-          document.getElementById('mainDisplay').innerText = '読み込み失敗';
-        };
-
+        script.src = `https://docs.google.com/spreadsheets/d/${idMatch[1]}/gviz/tq?tqx=responseHandler:handleGvizResponse&gid=${gidMatch ? gidMatch[1] : '0'}`;
         document.body.appendChild(script);
-      } catch (e) {
-        console.error(e);
-        document.getElementById('mainDisplay').innerText = 'エラーが発生しました';
-      }
+      } catch (e) {}
     }
 
-    // APIレスポンス処理
     window.handleGvizResponse = function(response) {
-      if (!response || response.status === 'error') {
-        document.getElementById('mainDisplay').innerText = '読み込み失敗';
-        return;
-      }
-
-      parseRowsToSections(response.table.rows);
+      if (!response || !response.table || !response.table.rows) return;
+      parseRowsToNotebooks(response.table.rows);
       showMenu();
     };
 
-    // スプレッドシート行データのパース
-    function parseRowsToSections(rows) {
-      sectionsData = [];
+    function parseRowsToNotebooks(rows) {
+      notebooks = [];
+      let currentNotebook = null;
       let currentSection = null;
 
       rows.forEach(row => {
         if (!row.c || row.c.length === 0) return;
-
         const firstCell = row.c[0] ? String(row.c[0].v).trim() : '';
 
-        // 【0のとき】：単語帳のタイトルを設定
         if (firstCell === '0') {
-          if (row.c[1] && row.c[1].v) {
-            notebookTitle = String(row.c[1].v).trim();
-          }
+          currentNotebook = {
+            title: (row.c[1] && row.c[1].v) ? String(row.c[1].v).trim() : '単語帳',
+            sections: []
+          };
+          notebooks.push(currentNotebook);
+          currentSection = null;
           return;
         }
 
-        // 【1または2のとき】：新しいセクションの始まり
+        if (!currentNotebook) {
+          currentNotebook = { title: '単語帳', sections: [] };
+          notebooks.push(currentNotebook);
+        }
+
         if (firstCell === '1' || firstCell === '2') {
-          const sectionTitle = (row.c[1] && row.c[1].v) ? String(row.c[1].v).trim() : 'セクション';
           currentSection = {
             type: firstCell,
-            title: sectionTitle,
+            title: (row.c[1] && row.c[1].v) ? String(row.c[1].v).trim() : 'セクション',
             words: []
           };
-          sectionsData.push(currentSection);
+          currentNotebook.sections.push(currentSection);
           return;
         }
 
-        // 英単語データの登録
         if (firstCell !== '' && currentSection) {
-          const word = firstCell;
-          const validMeanings = []; // 存在する意味のリスト
-          const meaningsMap = {};   // 全品詞のマッピング
+          const validMeanings = [];
+          const meaningsMap = {};
 
-          ALL_POS.forEach((pos, index) => {
-            const cell = row.c[index + 1];
+          if (currentSection.type === '1') {
+            ALL_POS.forEach((pos, index) => {
+              const cell = row.c[index + 1];
+              if (cell && cell.v !== null && cell.v !== undefined) {
+                const val = String(cell.v).trim();
+                if (val !== '') {
+                  meaningsMap[pos] = val;
+                  validMeanings.push({ pos: pos, text: val });
+                }
+              }
+            });
+          } else {
+            const cell = row.c[1];
             if (cell && cell.v !== null && cell.v !== undefined) {
               const val = String(cell.v).trim();
-              if (val !== '') {
-                meaningsMap[pos] = val;
-                validMeanings.push({ pos: pos, text: val });
-              }
+              if (val !== '') validMeanings.push({ pos: '', text: val });
             }
-          });
+          }
 
-          currentSection.words.push({
-            word: word,
-            meaningsMap: meaningsMap,
-            validMeanings: validMeanings
-          });
+          currentSection.words.push({ word: firstCell, meaningsMap, validMeanings });
         }
       });
     }
 
-    // --- メニュー画面の表示 ---
     function showMenu(e) {
       if (e) e.stopPropagation();
       isStudyMode = false;
 
-      document.getElementById('mainDisplay').innerText = notebookTitle;
-      document.getElementById('wordLeftTap').style.display = 'none';
-      document.getElementById('wordRightTap').style.display = 'none';
-      document.getElementById('meaningTapOverlay').style.display = 'none';
-
       const container = document.getElementById('listContent');
       container.innerHTML = '';
+      document.getElementById('meaningTapOverlay').style.display = 'none';
 
-      if (sectionsData.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding: 20px;">セクションデータが見つかりません</div>';
-        return;
-      }
+      if (notebooks.length === 0) return;
 
-      sectionsData.forEach((sec, index) => {
-        const row = document.createElement('div');
-        row.className = 'item-row';
-        row.style.cursor = 'pointer';
+      const activeNotebook = notebooks[currentNotebookIndex];
+      document.getElementById('mainDisplay').innerText = activeNotebook.title;
 
-        const bullet = document.createElement('span');
-        bullet.className = 'menu-bullet';
-        bullet.innerText = '◯';
+      activeNotebook.sections.forEach((sec, index) => {
+        const card = document.createElement('div');
+        card.className = 'item-card menu-card';
 
         const text = document.createElement('span');
         text.className = 'section-text';
         text.innerText = sec.title;
 
-        row.appendChild(bullet);
-        row.appendChild(text);
+        const countBadge = document.createElement('span');
+        countBadge.className = 'count-badge';
+        countBadge.innerText = sec.words.length;
 
-        row.onclick = () => startSection(index);
-        container.appendChild(row);
+        card.appendChild(text);
+        card.appendChild(countBadge);
+        card.onclick = () => startSection(index);
+        container.appendChild(card);
       });
     }
 
-    // --- 単語学習画面の開始 ---
     function startSection(sectionIndex) {
       currentSectionIndex = sectionIndex;
       currentWordIndex = 0;
       isStudyMode = true;
-
-      document.getElementById('wordLeftTap').style.display = 'block';
-      document.getElementById('wordRightTap').style.display = 'block';
       document.getElementById('meaningTapOverlay').style.display = 'block';
-
       setupWord();
     }
 
-    // 単語の初期表示
     function setupWord() {
-      const section = sectionsData[currentSectionIndex];
-      if (!section || section.words.length === 0) {
-        document.getElementById('mainDisplay').innerText = '単語がありません';
-        document.getElementById('listContent').innerHTML = '';
-        return;
-      }
+      const activeNotebook = notebooks[currentNotebookIndex];
+      const section = activeNotebook ? activeNotebook.sections[currentSectionIndex] : null;
+      if (!section || section.words.length === 0) return;
 
       const wordData = section.words[currentWordIndex];
-
       document.getElementById('mainDisplay').innerText = wordData.word;
-
       visibleMeaningCount = 0;
       renderMeanings();
     }
 
-    // 意味エリアおよび品詞アイコンの描画
     function renderMeanings() {
-      const section = sectionsData[currentSectionIndex];
+      const activeNotebook = notebooks[currentNotebookIndex];
+      const section = activeNotebook.sections[currentSectionIndex];
       const wordData = section.words[currentWordIndex];
       const container = document.getElementById('listContent');
       container.innerHTML = '';
 
       const activeMeanings = wordData.validMeanings.slice(0, visibleMeaningCount);
 
-      ALL_POS.forEach(pos => {
-        const hasMeaning = wordData.meaningsMap.hasOwnProperty(pos);
-        const isShown = activeMeanings.some(item => item.pos === pos);
+      if (section.type === '1') {
+        ALL_POS.forEach(pos => {
+          const hasMeaning = wordData.meaningsMap.hasOwnProperty(pos);
+          const isShown = activeMeanings.some(item => item.pos === pos);
 
-        const row = document.createElement('div');
-        row.className = 'item-row';
+          const card = document.createElement('div');
+          card.className = `item-card ${hasMeaning ? 'has-meaning' : ''}`;
 
-        const badge = document.createElement('span');
-        badge.className = `icon-badge ${hasMeaning ? '' : 'disabled'}`;
-        badge.innerText = pos;
+          const badge = document.createElement('span');
+          badge.className = `icon-badge ${hasMeaning ? '' : 'disabled'}`;
+          badge.innerText = pos;
+          card.appendChild(badge);
 
-        row.appendChild(badge);
+          if (hasMeaning && isShown) {
+            const text = document.createElement('span');
+            text.className = 'meaning-text';
+            text.innerText = wordData.meaningsMap[pos];
+            card.appendChild(text);
+          }
+
+          container.appendChild(card);
+        });
+      } else {
+        const hasMeaning = wordData.validMeanings.length > 0;
+        const isShown = visibleMeaningCount > 0;
+
+        const card = document.createElement('div');
+        card.className = `item-card ${hasMeaning ? 'has-meaning' : ''}`;
 
         if (hasMeaning && isShown) {
           const text = document.createElement('span');
           text.className = 'meaning-text';
-          text.innerText = wordData.meaningsMap[pos];
-          row.appendChild(text);
+          text.innerText = wordData.validMeanings[0].text;
+          card.appendChild(text);
         }
 
-        container.appendChild(row);
-      });
+        container.appendChild(card);
+      }
     }
 
-    // 次の単語へ進む処理
     function goToNextWord() {
-      const section = sectionsData[currentSectionIndex];
+      const section = notebooks[currentNotebookIndex].sections[currentSectionIndex];
       if (currentWordIndex < section.words.length - 1) {
         currentWordIndex++;
         setupWord();
@@ -418,12 +417,33 @@
       }
     }
 
-    // --- 長押し・タップ処理の制御 ---
+    function toggleDarkMode() {
+      const body = document.body;
+      const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (body.classList.contains('dark-mode')) {
+        body.classList.remove('dark-mode');
+        body.classList.add('light-mode');
+      } else if (body.classList.contains('light-mode')) {
+        body.classList.remove('light-mode');
+        body.classList.add('dark-mode');
+      } else {
+        if (isSystemDark) {
+          body.classList.add('light-mode');
+        } else {
+          body.classList.add('dark-mode');
+        }
+      }
+    }
+
     function startLongPress() {
       isLongPressTriggered = false;
       longPressTimer = setTimeout(() => {
         isLongPressTriggered = true;
-        showMenu(); // 1秒長押しでメニューに戻る
+        if (isStudyMode) {
+          showMenu();
+        } else {
+          toggleDarkMode();
+        }
       }, 1000);
     }
 
@@ -434,84 +454,62 @@
       }
     }
 
-    // --- 【単語部・左エリア】操作イベント設定 ---
     const wordLeftEl = document.getElementById('wordLeftTap');
-
-    wordLeftEl.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      startLongPress();
-    });
-
+    wordLeftEl.addEventListener('pointerdown', (e) => { e.preventDefault(); startLongPress(); });
     wordLeftEl.addEventListener('pointerup', (e) => {
       e.preventDefault();
       cancelLongPress();
-      if (!isLongPressTriggered) {
-        handleWordLeftClick();
-      }
+      if (!isLongPressTriggered) handleLeftClick();
     });
-
     wordLeftEl.addEventListener('pointercancel', cancelLongPress);
     wordLeftEl.addEventListener('pointerleave', cancelLongPress);
 
-    // 【単語部・左】タップ動作：全消去 ➔ 前の単語へ
-    function handleWordLeftClick() {
-      if (!isStudyMode) return;
-
-      if (visibleMeaningCount > 0) {
-        visibleMeaningCount = 0;
-        renderMeanings();
-      } else {
-        if (currentWordIndex > 0) {
+    function handleLeftClick() {
+      if (isStudyMode) {
+        if (visibleMeaningCount > 0) {
+          visibleMeaningCount = 0;
+          renderMeanings();
+        } else if (currentWordIndex > 0) {
           currentWordIndex--;
           setupWord();
         }
+      } else if (notebooks.length > 1) {
+        currentNotebookIndex = (currentNotebookIndex - 1 + notebooks.length) % notebooks.length;
+        showMenu();
       }
     }
 
-    // --- 【単語部・右エリア】操作イベント設定 ---
     const wordRightEl = document.getElementById('wordRightTap');
-
-    wordRightEl.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      startLongPress();
-    });
-
+    wordRightEl.addEventListener('pointerdown', (e) => { e.preventDefault(); startLongPress(); });
     wordRightEl.addEventListener('pointerup', (e) => {
       e.preventDefault();
       cancelLongPress();
-      if (!isLongPressTriggered) {
-        handleWordRightClick();
-      }
+      if (!isLongPressTriggered) handleRightClick();
     });
-
     wordRightEl.addEventListener('pointercancel', cancelLongPress);
     wordRightEl.addEventListener('pointerleave', cancelLongPress);
 
-    // 【単語部・右】タップ動作：一括全表示 ➔ 次の単語へ
-    function handleWordRightClick() {
-      if (!isStudyMode) return;
+    function handleRightClick() {
+      if (isStudyMode) {
+        const section = notebooks[currentNotebookIndex].sections[currentSectionIndex];
+        const wordData = section.words[currentWordIndex];
+        const totalMeanings = wordData.validMeanings.length;
 
-      const section = sectionsData[currentSectionIndex];
-      if (!section || section.words.length === 0) return;
-
-      const wordData = section.words[currentWordIndex];
-      const totalMeanings = wordData.validMeanings.length;
-
-      if (visibleMeaningCount < totalMeanings) {
-        visibleMeaningCount = totalMeanings;
-        renderMeanings();
-      } else {
-        goToNextWord();
+        if (visibleMeaningCount < totalMeanings) {
+          visibleMeaningCount = totalMeanings;
+          renderMeanings();
+        } else {
+          goToNextWord();
+        }
+      } else if (notebooks.length > 1) {
+        currentNotebookIndex = (currentNotebookIndex + 1) % notebooks.length;
+        showMenu();
       }
     }
 
-    // --- 【意味部】クリック操作 ---
     function handleMeaningClick() {
       if (!isStudyMode) return;
-
-      const section = sectionsData[currentSectionIndex];
-      if (!section || section.words.length === 0) return;
-
+      const section = notebooks[currentNotebookIndex].sections[currentSectionIndex];
       const wordData = section.words[currentWordIndex];
       const totalMeanings = wordData.validMeanings.length;
 
