@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>単語帳</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* --- 基本変数定義（デフォルト：ライトモード） --- */
+    :root {
+      --bg-color: #ffffff;             /* 全体背景 */
+      --text-color: #000000;           /* 英単語・メニュー文字色 */
+      --meaning-color: #ff6b00;        /* 意味の文字色（オレンジ） */
+      --border-color: #000000;         /* 分割線・枠線の色 */
+    }
+
+    /* --- ダークモード --- */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #121212;           /* 全体背景（黒） */
+        --text-color: #ffffff;         /* 英単語・メニュー文字色 */
+        --meaning-color: #ff8533;        /* 意味の文字色（ダークモード用） */
+        --border-color: #ffffff;       /* 分割線・枠線の色 */
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Zen Kaku Gothic New", sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: background-color 0.3s, color 0.3s;
+      overflow: hidden;
+    }
+
+    /* 上部 1/3 エリア（単語表示部） */
+    .header-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: var(--bg-color);
+      border-bottom: 2px solid var(--border-color);
+      padding: 10px;
+      position: relative;
+    }
+
+    .main-title {
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: var(--text-color);
+      text-align: center;
+      word-break: break-all;
+      z-index: 1;
+    }
+
+    /* 単語部 左半分のタップ・長押し用オーバーレイ */
+    .word-left-tap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 50%;
+      height: 100%;
+      background: transparent;
+      cursor: pointer;
+      z-index: 5;
+      touch-action: manipulation;
+    }
+
+    /* 単語部 右半分のタップ・長押し用オーバーレイ */
+    .word-right-tap {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 50%;
+      height: 100%;
+      background: transparent;
+      cursor: pointer;
+      z-index: 5;
+      touch-action: manipulation;
+    }
+
+    /* 下部 2/3 エリア（意味表示部） */
+    .content-area {
+      flex: 2;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background-color: var(--bg-color);
+      position: relative;
+    }
+
+    /* 行レイアウト */
+    .item-row {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* 単語学習画面：品詞アイコン枠付きスタイル */
+    .icon-badge {
+      display: inline-block;
+      width: 38px;
+      height: 38px;
+      line-height: 36px;
+      text-align: center;
+      font-weight: 700;
+      color: var(--text-color);
+      background-color: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-right: 16px;
+      flex-shrink: 0;
+      font-size: 1.1rem;
+    }
+
+    /* 意味を持たない品詞アイコンの透過 */
+    .icon-badge.disabled {
+      opacity: 0.25;
+    }
+
+    /* メニュー画面：枠なしの箇条書き用『◯』マーク */
+    .menu-bullet {
+      display: inline-block;
+      width: 38px;
+      text-align: center;
+      font-size: 1.2rem;
+      color: var(--text-color);
+      margin-right: 16px;
+      flex-shrink: 0;
+    }
+
+    /* 意味のテキスト（オレンジ色） */
+    .meaning-text {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      color: var(--meaning-color);
+      font-weight: 700;
+    }
+
+    /* メニューのセクションテキスト */
+    .section-text {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      color: var(--text-color);
+      font-weight: 700;
+    }
+
+    /* 意味部全体のタップ用オーバーレイ */
+    .meaning-tap-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      cursor: pointer;
+      z-index: 5;
+    }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+
+  <div class="header-area">
+    <div id="mainDisplay" class="main-title">読み込み中...</div>
+    
+    <div id="wordLeftTap" class="word-left-tap" style="display: none;"></div>
+    <div id="wordRightTap" class="word-right-tap" style="display: none;"></div>
+  </div>
+
+  <div id="contentContainer" class="content-area">
+    <div id="meaningTapOverlay" class="meaning-tap-overlay" onclick="handleMeaningClick()" style="display: none;"></div>
+    <div id="listContent"></div>
+  </div>
+
+  <script>
+    // ★ここにスプレッドシートのURLを貼ってください
+    const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1kI0IS_wa0cWi7ZVBB_6Hf0Afgiy49CoXSQz720zbsyc/edit?gid=0#gid=0';
+
+    // 品詞順序（常にこの7つを表示）
+    const ALL_POS = ['自', '他', '名', '形', '副', '前', '接'];
+
+    let notebookTitle = '単語帳'; // A列が0の行から動的にセットされます
+    let sectionsData = [];
+    let currentSectionIndex = 0;
+    let currentWordIndex = 0;
+    let visibleMeaningCount = 0;  // 現在表示されている意味の件数
+    let isStudyMode = false;
+
+    // 長押し判定用変数
+    let longPressTimer = null;
+    let isLongPressTriggered = false;
+
+    // JSONP通信でデータ読み込み
+    function loadDataWithJSONP() {
+      try {
+        const idMatch = SPREADSHEET_URL.match(/\/d\/([^\/]+)/);
+        const gidMatch = SPREADSHEET_URL.match(/gid=([0-9]+)/);
+
+        if (!idMatch) {
+          document.getElementById('mainDisplay').innerText = 'URLが無効です';
+          return;
+        }
+
+        const spreadsheetId = idMatch[1];
+        const gid = gidMatch ? gidMatch[1] : '0';
+
+        const script = document.createElement('script');
+        script.src = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=responseHandler:handleGvizResponse&gid=${gid}`;
+        
+        script.onerror = function() {
+          document.getElementById('mainDisplay').innerText = '読み込み失敗';
+        };
+
+        document.body.appendChild(script);
+      } catch (e) {
+        console.error(e);
+        document.getElementById('mainDisplay').innerText = 'エラーが発生しました';
+      }
+    }
+
+    // APIレスポンス処理
+    window.handleGvizResponse = function(response) {
+      if (!response || response.status === 'error') {
+        document.getElementById('mainDisplay').innerText = '読み込み失敗';
+        return;
+      }
+
+      parseRowsToSections(response.table.rows);
+      showMenu();
+    };
+
+    // スプレッドシート行データのパース
+    function parseRowsToSections(rows) {
+      sectionsData = [];
+      let currentSection = null;
+
+      rows.forEach(row => {
+        if (!row.c || row.c.length === 0) return;
+
+        const firstCell = row.c[0] ? String(row.c[0].v).trim() : '';
+
+        // 【0のとき】：単語帳のタイトルを設定
+        if (firstCell === '0') {
+          if (row.c[1] && row.c[1].v) {
+            notebookTitle = String(row.c[1].v).trim();
+          }
+          return;
+        }
+
+        // 【1または2のとき】：新しいセクションの始まり
+        if (firstCell === '1' || firstCell === '2') {
+          const sectionTitle = (row.c[1] && row.c[1].v) ? String(row.c[1].v).trim() : 'セクション';
+          currentSection = {
+            type: firstCell,
+            title: sectionTitle,
+            words: []
+          };
+          sectionsData.push(currentSection);
+          return;
+        }
+
+        // 英単語データの登録
+        if (firstCell !== '' && currentSection) {
+          const word = firstCell;
+          const validMeanings = []; // 存在する意味のリスト
+          const meaningsMap = {};   // 全品詞のマッピング
+
+          ALL_POS.forEach((pos, index) => {
+            const cell = row.c[index + 1];
+            if (cell && cell.v !== null && cell.v !== undefined) {
+              const val = String(cell.v).trim();
+              if (val !== '') {
+                meaningsMap[pos] = val;
+                validMeanings.push({ pos: pos, text: val });
+              }
+            }
+          });
+
+          currentSection.words.push({
+            word: word,
+            meaningsMap: meaningsMap,
+            validMeanings: validMeanings
+          });
+        }
+      });
+    }
+
+    // --- メニュー画面の表示 ---
+    function showMenu(e) {
+      if (e) e.stopPropagation();
+      isStudyMode = false;
+
+      document.getElementById('mainDisplay').innerText = notebookTitle;
+      document.getElementById('wordLeftTap').style.display = 'none';
+      document.getElementById('wordRightTap').style.display = 'none';
+      document.getElementById('meaningTapOverlay').style.display = 'none';
+
+      const container = document.getElementById('listContent');
+      container.innerHTML = '';
+
+      if (sectionsData.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding: 20px;">セクションデータが見つかりません</div>';
+        return;
+      }
+
+      sectionsData.forEach((sec, index) => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.style.cursor = 'pointer';
+
+        const bullet = document.createElement('span');
+        bullet.className = 'menu-bullet';
+        bullet.innerText = '◯';
+
+        const text = document.createElement('span');
+        text.className = 'section-text';
+        text.innerText = sec.title;
+
+        row.appendChild(bullet);
+        row.appendChild(text);
+
+        row.onclick = () => startSection(index);
+        container.appendChild(row);
+      });
+    }
+
+    // --- 単語学習画面の開始 ---
+    function startSection(sectionIndex) {
+      currentSectionIndex = sectionIndex;
+      currentWordIndex = 0;
+      isStudyMode = true;
+
+      document.getElementById('wordLeftTap').style.display = 'block';
+      document.getElementById('wordRightTap').style.display = 'block';
+      document.getElementById('meaningTapOverlay').style.display = 'block';
+
+      setupWord();
+    }
+
+    // 単語の初期表示
+    function setupWord() {
+      const section = sectionsData[currentSectionIndex];
+      if (!section || section.words.length === 0) {
+        document.getElementById('mainDisplay').innerText = '単語がありません';
+        document.getElementById('listContent').innerHTML = '';
+        return;
+      }
+
+      const wordData = section.words[currentWordIndex];
+
+      document.getElementById('mainDisplay').innerText = wordData.word;
+
+      visibleMeaningCount = 0;
+      renderMeanings();
+    }
+
+    // 意味エリアおよび品詞アイコンの描画
+    function renderMeanings() {
+      const section = sectionsData[currentSectionIndex];
+      const wordData = section.words[currentWordIndex];
+      const container = document.getElementById('listContent');
+      container.innerHTML = '';
+
+      const activeMeanings = wordData.validMeanings.slice(0, visibleMeaningCount);
+
+      ALL_POS.forEach(pos => {
+        const hasMeaning = wordData.meaningsMap.hasOwnProperty(pos);
+        const isShown = activeMeanings.some(item => item.pos === pos);
+
+        const row = document.createElement('div');
+        row.className = 'item-row';
+
+        const badge = document.createElement('span');
+        badge.className = `icon-badge ${hasMeaning ? '' : 'disabled'}`;
+        badge.innerText = pos;
+
+        row.appendChild(badge);
+
+        if (hasMeaning && isShown) {
+          const text = document.createElement('span');
+          text.className = 'meaning-text';
+          text.innerText = wordData.meaningsMap[pos];
+          row.appendChild(text);
+        }
+
+        container.appendChild(row);
+      });
+    }
+
+    // 次の単語へ進む処理
+    function goToNextWord() {
+      const section = sectionsData[currentSectionIndex];
+      if (currentWordIndex < section.words.length - 1) {
+        currentWordIndex++;
+        setupWord();
+      } else {
+        showMenu();
+      }
+    }
+
+    // --- 長押し・タップ処理の制御 ---
+    function startLongPress() {
+      isLongPressTriggered = false;
+      longPressTimer = setTimeout(() => {
+        isLongPressTriggered = true;
+        showMenu(); // 1秒長押しでメニューに戻る
+      }, 1000);
+    }
+
+    function cancelLongPress() {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    }
+
+    // --- 【単語部・左エリア】操作イベント設定 ---
+    const wordLeftEl = document.getElementById('wordLeftTap');
+
+    wordLeftEl.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      startLongPress();
+    });
+
+    wordLeftEl.addEventListener('pointerup', (e) => {
+      e.preventDefault();
+      cancelLongPress();
+      if (!isLongPressTriggered) {
+        handleWordLeftClick();
+      }
+    });
+
+    wordLeftEl.addEventListener('pointercancel', cancelLongPress);
+    wordLeftEl.addEventListener('pointerleave', cancelLongPress);
+
+    // 【単語部・左】タップ動作：全消去 ➔ 前の単語へ
+    function handleWordLeftClick() {
+      if (!isStudyMode) return;
+
+      if (visibleMeaningCount > 0) {
+        visibleMeaningCount = 0;
+        renderMeanings();
+      } else {
+        if (currentWordIndex > 0) {
+          currentWordIndex--;
+          setupWord();
+        }
+      }
+    }
+
+    // --- 【単語部・右エリア】操作イベント設定 ---
+    const wordRightEl = document.getElementById('wordRightTap');
+
+    wordRightEl.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      startLongPress();
+    });
+
+    wordRightEl.addEventListener('pointerup', (e) => {
+      e.preventDefault();
+      cancelLongPress();
+      if (!isLongPressTriggered) {
+        handleWordRightClick();
+      }
+    });
+
+    wordRightEl.addEventListener('pointercancel', cancelLongPress);
+    wordRightEl.addEventListener('pointerleave', cancelLongPress);
+
+    // 【単語部・右】タップ動作：一括全表示 ➔ 次の単語へ
+    function handleWordRightClick() {
+      if (!isStudyMode) return;
+
+      const section = sectionsData[currentSectionIndex];
+      if (!section || section.words.length === 0) return;
+
+      const wordData = section.words[currentWordIndex];
+      const totalMeanings = wordData.validMeanings.length;
+
+      if (visibleMeaningCount < totalMeanings) {
+        visibleMeaningCount = totalMeanings;
+        renderMeanings();
+      } else {
+        goToNextWord();
+      }
+    }
+
+    // --- 【意味部】クリック操作 ---
+    function handleMeaningClick() {
+      if (!isStudyMode) return;
+
+      const section = sectionsData[currentSectionIndex];
+      if (!section || section.words.length === 0) return;
+
+      const wordData = section.words[currentWordIndex];
+      const totalMeanings = wordData.validMeanings.length;
+
+      if (visibleMeaningCount < totalMeanings) {
+        visibleMeaningCount++;
+        renderMeanings();
+      } else {
+        goToNextWord();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadDataWithJSONP);
+  </script>
+</body>
+</html>
